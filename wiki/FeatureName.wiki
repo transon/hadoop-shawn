@@ -1,0 +1,28 @@
+#labels FeatureName
+== Introduction ==
+
+HDFS: a master/slave architechture
+
+----
+
+== Details ==
+
+NameNode: executes file namespace operations like opening, closing, and renaming files and directories, the mapping of blocks to DataNodes.
+
+
+DataNode: responsible for serving read and write request for the file system's client, also perform block creation, deletion and replication upon instruction from the NameNode.
+
+
+Heartbeat: implies that the DataNode is functioning properly.
+
+Blockreport: contains a list of all blocks on a DataNode. 
+
+rack-aware replica placement policy, is to improve data reliability, availability, and network bandwidth utilization.
+
+EditLog: persistently record every change that occurs to file system metadata.
+
+FsImage: the entire file system namespace, including the mapping of blocks to files and file system properties
+
+Staging: caches the file data into a temporary local file, when the local file accumulates data worth over one HDFS block size, then write it to DataNode.
+
+Replication Pipeline: the client flushes the data block to the first DataNode, the first DataNode starts recvicing the data in small portions(4KB), writes each portion to its local repository and then flushs that portion to the third DataNode. Finally, the third DataNode writes the data to its local repository.
