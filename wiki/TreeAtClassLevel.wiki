@@ -211,3 +211,52 @@ org.apache.hadoop.hdfs.server.protocol
  * 
  **********************************************************************/
 }}}
+
+org.apache.hadoop.hdfs.server.namenode
+{{{
+1) INode
+/**
+ * We keep an in-memory representation of the file/block hierarchy.
+ * This is a base INode class containing common fields for file and 
+ * directory inodes.
+ */
+
+2) INodeDirectory
+/**
+ * Directory INode class.
+ */
+
+3) INodeDirectoryWithQuota
+/**
+ * Directory INode class that has a quota restriction
+ */
+
+4) INodeFile
+
+5) INodeFileUnderConstruction
+
+6) BlockInfo
+/**
+ * Internal class for block metadata.
+ */
+
+7) BlockManager
+/**
+ * Keeps information related to the blocks stored in the Hadoop cluster.
+ * This class is a helper class for {@link FSNamesystem} and requires several
+ * methods to be called with lock held on {@link FSNamesystem}.
+ */
+
+8) BlockPlacementPolicy
+/** 
+ * This interface is used for choosing the desired number of targets
+ * for placing block replicas.
+ */
+
+9) BlocksMap
+/**
+ * This class maintains the map from a block to its metadata.
+ * block's metadata currently includes INode it belongs to and
+ * the datanodes that store the block.
+ */
+}}}
