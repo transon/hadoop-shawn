@@ -1,0 +1,263 @@
+从Class的级别理解每个类做些什么事情，它们之间是如何协调工作的，这样能够有一个整体架构上的理解，当然需要针对每一个类深入下去理解每一个属性和方法。
+
+2010/10/08: 升级中。。。
+
+
+---
+
+
+org.apache.hadoop.hdfs.protocol
+```
+1) Block
+/**************************************************
+ * A Block is a Hadoop FS primitive, identified by a 
+ * long.
+ *
+ **************************************************/
+
+2) BlockListAsLongs
+/**
+ * This class provides an interface for accessing list of blocks that
+ * has been implemented as long[].
+ * This class is useful for block report. Rather than send block reports
+ * as a Block[] we can send it as a long[].
+ *
+ * The structure of the array is as follows:
+ * 0: the length of the finalized replica list;
+ * 1: the length of the under-construction replica list;
+ * - followed by finalized replica list where each replica is represented by
+ *   3 longs: one for the blockId, one for the block length, and one for
+ *   the generation stamp;
+ * - followed by the invalid replica represented with three -1s;
+ * - followed by the under-construction replica list where each replica is
+ *   represented by 4 longs: three for the block id, length, generation 
+ *   stamp, and the forth for the replica state.
+ */
+
+3) DatanodeID
+/**
+ * DatanodeID is composed of the data node 
+ * name (hostname:portNumber) and the data storage ID, 
+ * which it currently represents.
+ * 
+ */
+
+4) DatanodeInfo
+/** 
+ * DatanodeInfo represents the status of a DataNode.
+ * This object is used for communication in the
+ * Datanode Protocol and the Client Protocol.
+ */
+
+5) DataTransferProtocol
+/**
+ * Transfer data to/from datanode using a streaming protocol.
+ */
+
+6) LocatedBlock
+/****************************************************
+ * A LocatedBlock is a pair of Block, DatanodeInfo[]
+ * objects.  It tells where to find a Block.
+ * 
+ ****************************************************/
+
+7) LocatedBlocks
+/**
+ * Collection of blocks with their locations and the file length.
+ */
+```
+
+org.apache.hadoop.hdfs
+```
+1) BlockReader
+/** 
+ * This is a wrapper around connection to datadone
+ * and understands checksum, offset etc
+ */ 
+
+2) DFSClient
+/********************************************************
+ * DFSClient can connect to a Hadoop Filesystem and 
+ * perform basic file tasks.  It uses the ClientProtocol
+ * to communicate with a NameNode daemon, and connects 
+ * directly to DataNodes to read/write block data.
+ *
+ * Hadoop DFS users should obtain an instance of 
+ * DistributedFileSystem, which uses DFSClient to handle
+ * filesystem tasks.
+ *
+ ********************************************************/
+```
+
+org.apache.hadoop.hdfs.server.datanode
+```
+1) BlockMetadataHeader
+/**
+ * BlockMetadataHeader manages metadata for data blocks on Datanodes.
+ * This is not related to the Block related functionality in Namenode.
+ * The biggest part of data block metadata is CRC for the block.
+ */
+
+2) BlockReceiver
+/** 
+ * A class that receives a block and writes to its own disk, meanwhile
+ * may copies it to another site. If a throttler is provided,
+ * streaming throttling is also supported.
+ **/
+
+3) BlockSender
+/**
+ * Reads a block from the disk and sends it to a recipient.
+ */
+
+4) ChunkChecksum
+/**
+ * holder class that holds checksum bytes and the length in a block at which
+ * the checksum bytes end
+ * 
+ * ex: length = 1023 and checksum is 4 bytes which is for 512 bytes, then
+ *     the checksum applies for the last chunk, or bytes 512 - 1023
+ */
+
+5) DataBlockScanner
+/**
+ * Performs two types of scanning:
+ * <li> Gets block files from the data directories and reconciles the
+ * difference between the blocks on the disk and in memory in
+ * {@link FSDataset}</li>
+ * <li> Scans the data directories for block files and verifies that
+ * the files are not corrupt</li>
+ * This keeps track of blocks and their last verification times.
+ * Currently it does not modify the metadata for block.
+ */
+
+6) DataNode
+/**********************************************************
+ * DataNode is a class (and program) that stores a set of
+ * blocks for a DFS deployment.  A single deployment can
+ * have one or many DataNodes.  Each DataNode communicates
+ * regularly with a single NameNode.  It also communicates
+ * with client code and other DataNodes from time to time.
+ *
+ * DataNodes store a series of named blocks.  The DataNode
+ * allows client code to read these blocks, or to write new
+ * block data.  The DataNode may also, in response to instructions
+ * from its NameNode, delete blocks or copy blocks to/from other
+ * DataNodes.
+ *
+ * The DataNode maintains just one critical table:
+ *   block-> stream of bytes (of BLOCK_SIZE or less)
+ *
+ * This info is stored on a local disk.  The DataNode
+ * reports the table's contents to the NameNode upon startup
+ * and every so often afterwards.
+ *
+ * DataNodes spend their lives in an endless loop of asking
+ * the NameNode for something to do.  A NameNode cannot connect
+ * to a DataNode directly; a NameNode simply returns values from
+ * functions invoked by a DataNode.
+ *
+ * DataNodes maintain an open server socket so that client code 
+ * or other DataNodes can read/write data.  The host/port for
+ * this server is reported to the NameNode, which then sends that
+ * information to clients or other DataNodes that might be interested.
+ *
+ **********************************************************/
+
+7) DataXceiver
+/**
+ * Thread for processing incoming/outgoing data stream.
+ */
+
+8) DataXceiverServer
+/**
+ * Server used for receiving/sending a block of data.
+ * This is created to listen for requests from clients or 
+ * other DataNodes.  This small server does not use the 
+ * Hadoop IPC mechanism.
+ */
+```
+
+org.apache.hadoop.hdfs.server.protocol
+```
+1) BlockCommand
+/****************************************************
+ * A BlockCommand is an instruction to a datanode 
+ * regarding some blocks under its control.  It tells
+ * the DataNode to either invalidate a set of indicated
+ * blocks, or to copy a set of indicated blocks to 
+ * another DataNode.
+ * 
+ ****************************************************/
+
+2) BlockRecoveryCommand
+/**
+ * BlockRecoveryCommand is an instruction to a data-node to recover
+ * the specified blocks.
+ *
+ * The data-node that receives this command treats itself as a primary
+ * data-node in the recover process.
+ *
+ * Block recovery is identified by a recoveryId, which is also the new
+ * generation stamp, which the block will have after the recovery succeeds.
+ */
+
+3) DatanodeProtocol
+/**********************************************************************
+ * Protocol that a DFS datanode uses to communicate with the NameNode. It's used
+ * to upload current load information and block reports.
+ * 
+ * The only way a NameNode can communicate with a DataNode is by returning
+ * values from these functions.
+ * 
+ **********************************************************************/
+```
+
+org.apache.hadoop.hdfs.server.namenode
+```
+1) INode
+/**
+ * We keep an in-memory representation of the file/block hierarchy.
+ * This is a base INode class containing common fields for file and 
+ * directory inodes.
+ */
+
+2) INodeDirectory
+/**
+ * Directory INode class.
+ */
+
+3) INodeDirectoryWithQuota
+/**
+ * Directory INode class that has a quota restriction
+ */
+
+4) INodeFile
+
+5) INodeFileUnderConstruction
+
+6) BlockInfo
+/**
+ * Internal class for block metadata.
+ */
+
+7) BlockManager
+/**
+ * Keeps information related to the blocks stored in the Hadoop cluster.
+ * This class is a helper class for {@link FSNamesystem} and requires several
+ * methods to be called with lock held on {@link FSNamesystem}.
+ */
+
+8) BlockPlacementPolicy
+/** 
+ * This interface is used for choosing the desired number of targets
+ * for placing block replicas.
+ */
+
+9) BlocksMap
+/**
+ * This class maintains the map from a block to its metadata.
+ * block's metadata currently includes INode it belongs to and
+ * the datanodes that store the block.
+ */
+```
